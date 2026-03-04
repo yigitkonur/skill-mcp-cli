@@ -1,46 +1,74 @@
-# skill-mcp-cli workspace
-
-This workspace contains:
-
-1. **mcp-cli source repo** (`./mcp-cli`) — the Bun CLI implementation.
-2. **Documentation set** (`./docs`) — practical guidance for configuration, commands, testing, troubleshooting, and internals.
-
-## Workspace map
-
-- `docs/getting-started.md` — install + first commands
-- `docs/configuration.md` — stdio/http config, filtering, env substitution
-- `docs/commands.md` — `info`, `call`, `grep`, flags, stream behavior
-- `docs/testing-guide.md` — mandatory MCP verification flow
-- `docs/troubleshooting.md` — error codes + recovery patterns
-- `docs/advanced-usage.md` — chaining, stream separation, env variables
-- `docs/internals.md` — daemon and retry internals
-- `mcp-cli/SKILL.md` — Codex skill entry point (lean orchestrator)
-- `mcp-cli/references/*.md` — detailed skill playbooks loaded on demand
-
-## Skill layout (inside `mcp-cli/`)
-
-```text
-mcp-cli/
-├── SKILL.md
-├── agents/openai.yaml
-└── references/
-    ├── testing-flow.md
-    ├── configuration-and-arguments.md
-    ├── output-debugging-and-chaining.md
-    └── errors-and-recovery.md
-```
-
-## Validation commands
-
-Run from `mcp-cli/`:
+# skill-mcp-cli
 
 ```bash
-python3 /Users/yigitkonur/.codex/skills/.system/skill-creator/scripts/quick_validate.py ./
-bun run src/index.ts -c ./mcp_servers.json info filesystem
-bun run src/index.ts -c ./mcp_servers.json call filesystem read_file '{"path":"./README.md","head":2}'
+npx skills add yigitkonur/skill-mcp-cli
 ```
 
-## Notes
+> [mcp server tester](https://github.com/yigitkonur/skill-mcp-server-tester) · [mcp-use code review](https://github.com/yigitkonur/skill-mcp-use) · [copilot review setup](https://github.com/yigitkonur/skill-copilot-review) · [devin review setup](https://github.com/yigitkonur/skill-devin-review-init)
 
-- The top-level workspace folder is not the git repository.
-- Git operations (commit/push) run in `./mcp-cli`.
+A Codex/Claude Code skill for rigorous MCP server testing with `mcp-cli`.
+It teaches agents to run direct CLI checks end-to-end (no helper scripts), validate both happy/error paths, and avoid false positives from daemon caching.
+
+## what it does
+
+When an agent builds or changes an MCP server, this skill enforces a strict verification workflow before it can report completion.
+
+It provides:
+
+- setup patterns for stdio/http servers
+- command-by-command test flow (connect → inventory → inspect → call → break)
+- JSON argument handling patterns (inline/stdin/heredoc/file/jq)
+- output + stream handling guidance
+- troubleshooting for ambiguous commands, missing tools, retries, and stale daemon connections
+- a definition-of-done checklist
+
+## what makes this useful
+
+**built for real agent execution.**
+The skill is optimized for terminal-first use: direct commands, sequential checks, and explicit pass/fail expectations.
+
+**guards against stale confidence.**
+It explicitly requires `MCP_NO_DAEMON=1` after rebuilds so agents verify the current server implementation, not cached daemon state.
+
+**progressive disclosure.**
+`SKILL.md` stays lean while detailed operational guidance lives in `references/*`.
+
+## requirements
+
+- `mcp-cli` (installed globally or runnable from source)
+- `curl` (for installer flow)
+- `jq` (recommended for downstream parsing patterns)
+
+## file overview
+
+| file | lines | what it covers |
+|---|---:|---|
+| `SKILL.md` | 77 | skill entrypoint, execution rules, reference routing |
+| `references/testing-flow.md` | 117 | strict setup + connect/inventory/inspect/call/break + checklist |
+| `references/configuration-and-arguments.md` | 83 | config templates, filtering, JSON argument patterns |
+| `references/output-debugging-and-chaining.md` | 79 | output model, stream separation, chaining, env vars |
+| `references/errors-and-recovery.md` | 68 | common failures, structured errors, retry and recovery |
+
+## usage examples
+
+```text
+test my mcp server with mcp-cli before I mark this task done
+```
+
+```text
+validate schema + happy path + bad input behavior for my MCP tool changes
+```
+
+```text
+retest this MCP server after rebuild using MCP_NO_DAEMON=1
+```
+
+## scope
+
+**built for:** testing MCP servers through `mcp-cli` with deterministic verification steps.
+
+**not for:** building MCP servers from scratch, testing non-MCP systems, or replacing deeper protocol fuzz tools.
+
+## license
+
+mit
